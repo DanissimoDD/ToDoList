@@ -7,34 +7,86 @@
 
 import UIKit
 
-protocol MainScreenPresenterInput: AnyObject {
+protocol MainScreenViewOutput {
+	func viewDidLoad()
 	
+	func createNewTask()
+	
+	func anyCheckMarkTapped(item: Int)
+	
+	func saveChanges(index: Int)
+	
+	func showTask(index: Int)
 }
 
-protocol MainScreenViewOutput {
-	func onButtonTapped()
+protocol MainScreenPresenterInput: AnyObject {
+	func dataDidLoad(models: [MainScreenItemModel])
+	
+	func showRequestError(message: String)
 }
 
 final class MainScreenPresenter {
 	weak var view: MainScreenViewInput?
 	
-	let output: MainScreenPresenterOutput
+	private let router: MainScreenRouter
 	
-	var sectionsModel: [MainScreenSectionModel] = []
+	private let output: MainScreenPresenterOutput
 	
-	var itemModel: [MainScreenItemModel] = []
+	private var defaults: StorageProtocol
 	
-	init(output: MainScreenPresenterOutput) {
+	private var sectionsModel: [MainScreenSectionModel] = []
+	
+	private var itemModel: [MainScreenItemModel] = []
+	
+	private let dispatchGroup = DispatchGroup()
+	
+	init(output: MainScreenPresenterOutput, router: MainScreenRouter, defaults: StorageProtocol) {
 		self.output = output
+		self.router = router
+		self.defaults = defaults
 	}
 }
 
 extension MainScreenPresenter: MainScreenViewOutput {
+	func showTask(index: Int) {
+		router.goToTaskScreen(model: itemModel[index])
+	}
 	
+	@objc func anyCheckMarkTapped(item: Int) {
+		itemModel[item].hasDone.toggle() // проблема с тегами при удалении
+		output.updateTask(model: itemModel[item])
+		view?.updateDataSource(models: itemModel)
+	}
+	
+	func createNewTask() {
+		router.goToTaskScreen(model: nil)
+	}
+	
+	func viewDidLoad() {
+		if !defaults.isAppLounchedBefore {
+			defaults.isAppLounchedBefore = true
+			dispatchGroup.enter()
+			output.fetchData { [weak self] in
+				guard let self else { return }
+				view?.updateDataSource(models: itemModel)
+			}
+		} else {
+			itemModel = output.fetchTasks()
+			view?.updateDataSource(models: itemModel)
+		}
+	}
+	
+	func saveChanges(index: Int) {
+		output.updateTask(model: itemModel[index])
+	}
 }
 
 extension MainScreenPresenter: MainScreenPresenterInput {
-	func onButtonTapped() {
-		view?.updateDataSource(models: output.fetchTasks())
+	func dataDidLoad(models: [MainScreenItemModel]) {
+		itemModel = models
+	}
+	
+	func showRequestError(message: String) {
+		view?.showToast(message: message, duration: 2)
 	}
 }

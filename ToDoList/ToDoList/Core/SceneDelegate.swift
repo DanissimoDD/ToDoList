@@ -11,15 +11,13 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 
 	var window: UIWindow?
 
-
 	func scene(_ scene: UIScene, willConnectTo session: UISceneSession, options connectionOptions: UIScene.ConnectionOptions) {
 		print(FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first ?? "")
 		guard let windowScene = (scene as? UIWindowScene) else { return }
 		let window = UIWindow(windowScene: windowScene)
-		let factory = ScreenFactory()
-		window.rootViewController = UINavigationController(
-			rootViewController: factory.makeMainScreen()
-		)
+		let navController = UINavigationController()
+		let router = Router(navigationController: navController)
+		window.rootViewController = router.navigationController
 		window.makeKeyAndVisible()
 		self.window = window
 	}
@@ -52,9 +50,6 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 		// to restore the scene back to its current state.
 
 		// Save changes in the application's managed object context when the application transitions to the background.
-		(UIApplication.shared.delegate as? AppDelegate)?.saveContext()
 	}
-
-
 }
 

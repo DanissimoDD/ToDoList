@@ -24,3 +24,23 @@ extension MainScreenItemModel {
 		hasDone = mo.hasDone
 	}
 }
+
+extension MainScreenItemModel {
+	init(model: TaskScreenModel) {
+		uid = model.uid
+		title = model.title
+		subTitle = model.subTitle
+		dateTime = model.dateTime
+		hasDone = false
+	}
+}
+
+extension MainScreenItemModel {
+	init(itemModelJSON: ItemModelJSON) {
+//		uid = UUID(from: itemModelJSON.userId) хм...
+		title = itemModelJSON.todo
+		subTitle = ""
+		dateTime = Date()
+		hasDone = itemModelJSON.completed
+	}
+}

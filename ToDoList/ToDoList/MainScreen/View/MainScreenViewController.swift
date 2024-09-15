@@ -9,22 +9,27 @@ import UIKit
 
 protocol MainScreenViewInput: AnyObject {
 	func updateDataSource(models: [MainScreenItemModel])
+	
+	func showToast(message: String, duration: TimeInterval)
 }
 
 final class MainScreenViewController: UIViewController {
 	
-	private let presenter: MainScreenViewOutput
+	private let output: MainScreenViewOutput
 	
 	private let titleLabel = {
 		let label = UILabel()
 		label.text = "Today's Task"
+		label.textColor = .black
 		label.font = .systemFont(ofSize: 24, weight: .bold)
 		return label
 	} ()
 	
 	private let dateLabel = {
 		let label = UILabel()
-		label.text = "Wednesday, 11 May" // добавить обработку даты
+		let dateFormatter = DateFormatter()
+		dateFormatter.dateFormat = "EEEE, dd MMMM"
+		label.text = dateFormatter.string(from: Date())
 		label.font = .systemFont(ofSize: 14, weight: .medium)
 		label.textColor = .gray
 		return label
@@ -49,17 +54,17 @@ final class MainScreenViewController: UIViewController {
 		let collectionView = UICollectionView(frame: .zero, collectionViewLayout: layout)
 		collectionView.showsVerticalScrollIndicator = false
 		collectionView.allowsMultipleSelection = false
-		collectionView.alwaysBounceVertical = false // Почекать как будет
+		collectionView.alwaysBounceVertical = false
 		collectionView.backgroundColor = .clear
-//		collectionView.delegate = self
+		collectionView.layer.cornerRadius = 20
 		collectionView.registerCell(MainScreenCollectionViewCell.self)
 		return collectionView
 	} ()
 	
-	private var dataSource: UICollectionViewDiffableDataSource<MainScreenSectionModel, MainScreenItemModel>?
+	var dataSource: UICollectionViewDiffableDataSource<MainScreenSectionModel, MainScreenItemModel>?
 
 	init(presenter: MainScreenViewOutput) {
-		self.presenter = presenter
+		self.output = presenter
 		super.init(nibName: nil, bundle: nil)
 	}
 
@@ -73,8 +78,13 @@ final class MainScreenViewController: UIViewController {
 		setupView()
 		setupLayout()
 		setupButtonAction()
+		collectionView.delegate = self
 		setupDataSource()
-		presenter.onButtonTapped()
+	}
+	
+	override func viewDidAppear(_ animated: Bool) {
+		super.viewDidAppear(animated)
+		output.viewDidLoad()
 	}
 }
 
@@ -110,28 +120,43 @@ private extension MainScreenViewController {
 	}
 	
 	func setupButtonAction() {
-//		addTaskButton.addTarget(self, action: #selector(onButtonTapped), for: .touchUpInside)
 		addTaskButton.addAction(UIAction { [weak self]
 			_ in
-			self?.presenter.onButtonTapped()
-			print(self?.dataSource)
+			guard let self else { return }
+			output.createNewTask()
 		}, for: .touchUpInside)
 	}
 	
 	func setupDataSource() {
+		let action = actionForCell()
 		dataSource = UICollectionViewDiffableDataSource(
 			collectionView: collectionView,
 			cellProvider: {
 				collectionView, indexPath, item in
-//				let cell: MainScreenCollectionViewCell = collectionView.dequeueCell(indexPath)
-				guard let cell = collectionView.dequeueReusableCell(
-					withReuseIdentifier: MainScreenCollectionViewCell.reuseId,
-					for: indexPath
-				) as? MainScreenCollectionViewCell else { return UICollectionViewCell()}
-				cell.configure(model: item)
+				let cell: MainScreenCollectionViewCell = collectionView.dequeueCell(indexPath)
+				cell.configure(model: item, cellRow: indexPath.item, action: action)
 				return cell
 			}
 		)
+	}
+	
+	func actionForCell() -> UIAction {
+		UIAction { [weak self]
+			localActon in
+			guard let self else { return }
+			if let sender = localActon.sender,
+			   let indexPath = indexPath(of: sender) {
+				self.output.anyCheckMarkTapped(item: indexPath.item)
+			}
+		}
+	}
+	
+	func indexPath(of element:Any) -> IndexPath? {
+		if let view =  element as? UIView {
+			let pos = view.convert(CGPoint.zero, to: collectionView)
+			return collectionView.indexPathForItem(at: pos)
+		}
+		return nil
 	}
 }
 
@@ -141,6 +166,51 @@ extension MainScreenViewController: MainScreenViewInput {
 		snapshot.appendSections([.main])
 		snapshot.appendItems(models)
 		dataSource?.apply(snapshot)
-		collectionView.reloadData()
+	}
+	
+
+	func showToast(message: String, duration: TimeInterval) {
+		
+		let toastView = ToastView(message: message)
+
+		// Получаем текущее окно
+		if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene {
+			if let window = windowScene.windows.first(where: { $0.isKeyWindow }) {
+				// Добавляем toastView в окно
+				window.addSubview(toastView)
+				toastView.translatesAutoresizingMaskIntoConstraints = false
+
+				// Устанавливаем ограничения для toastView
+				NSLayoutConstraint.activate([
+					toastView.centerXAnchor.constraint(equalTo: window.centerXAnchor),
+					toastView.bottomAnchor.constraint(equalTo: window.bottomAnchor, constant: -100),
+					toastView.widthAnchor.constraint(lessThanOrEqualToConstant: 320),
+					toastView.heightAnchor.constraint(greaterThanOrEqualToConstant: 50) // Минимальная высота
+				])
+
+				// Анимация появления
+				toastView.alpha = 0.0
+				UIView.animate(withDuration: 0.5) {
+					toastView.alpha = 1.0
+				} completion: { _ in
+					// Анимация исчезновения через заданный интервал
+					UIView.animate(withDuration: 0.5, delay: duration, options: [], animations: {
+						toastView.alpha = 0.0
+					}) { _ in
+						// Удаляем toast после завершения анимации
+						toastView.removeFromSuperview()
+					}
+				}
+			}
+		}
 	}
 }
+
+
+extension MainScreenViewController: UICollectionViewDelegate {
+	func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
+		output.showTask(index: indexPath.row)
+	}
+}
+
+
