@@ -14,7 +14,6 @@ struct TaskScreenModel {
 	var dateTime: Date
 }
 
-// Потом убрать сделать одну модель
 extension TaskScreenModel {
 	init(model: MainScreenItemModel) {
 		uid = model.uid

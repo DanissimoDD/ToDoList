@@ -17,7 +17,7 @@ final class Storage {
 		case isAppLounchedBefore
 	}
 	
-	let defaults = UserDefaults.standard
+	private let defaults = UserDefaults.standard
 }
 
 extension Storage: StorageProtocol {

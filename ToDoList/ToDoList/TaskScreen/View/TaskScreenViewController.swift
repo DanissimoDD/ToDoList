@@ -69,27 +69,27 @@ final class TaskScreenViewController: UIViewController {
 
 	private let titleTextField = {
 		let textField = UITextField()
-		textField.backgroundColor = UIColor(red: 245/256, green: 245/256, blue: 245/256, alpha: 1)
+		textField.backgroundColor = UIColor(fromHex: "F0F0F0")
 		textField.font = UIFont.systemFont(ofSize: 18)
 		textField.textColor = UIColor.black
 		textField.layer.cornerRadius = 12
 		textField.clipsToBounds = true
 		textField.attributedPlaceholder = NSAttributedString(string: "Task title", attributes: [NSAttributedString.Key.foregroundColor: UIColor.lightGray])
 		textField.leftView = UIView(frame: CGRect(x: 0, y: 0, width: 10, height: 20))
-		textField.leftViewMode = .always // Всегда показывать отступ
+		textField.leftViewMode = .always
 		return textField
 	} ()
 
 	private let subtitleTextField = {
 		let textField = UITextField()
-		textField.backgroundColor = UIColor(red: 245/256, green: 245/256, blue: 245/256, alpha: 1)
+		textField.backgroundColor = UIColor(fromHex: "F0F0F0")
 		textField.font = UIFont.systemFont(ofSize: 18)
 		textField.textColor = UIColor.black
 		textField.layer.cornerRadius = 12
 		textField.clipsToBounds = true
 		textField.attributedPlaceholder = NSAttributedString(string: "Discription", attributes: [NSAttributedString.Key.foregroundColor: UIColor.lightGray])
-		textField.leftView = UIView(frame: CGRect(x: 0, y: 0, width: 10, height: 20)) // Отступ слева
-		textField.leftViewMode = .always // Всегда показывать отступ
+		textField.leftView = UIView(frame: CGRect(x: 0, y: 0, width: 10, height: 20))
+		textField.leftViewMode = .always
 		return textField
 	} ()
 
@@ -115,11 +115,10 @@ final class TaskScreenViewController: UIViewController {
 		setupButtons()
 		output.viewDidLoad()
 	}
-
-}
-
-private extension TaskScreenViewController {
-	func setupView() {
+	
+	// MARK: - Private setup methods
+	
+	private func setupView() {
 		view.backgroundColor = .white
 		view.addSubviews(
 			doneButton,
@@ -132,7 +131,7 @@ private extension TaskScreenViewController {
 		)
 	}
 	
-	func setupLayout() {
+	private func setupLayout() {
 		view.disableAutoresizingMaskTranslation(
 			doneButton,
 			titleLable,
@@ -181,7 +180,7 @@ private extension TaskScreenViewController {
 		])
 	}
 	
-	func setupButtons() {
+	private func setupButtons() {
 		doneButton.addAction(UIAction {
 			[weak self] _ in
 			guard let self = self else { return }
@@ -207,6 +206,8 @@ private extension TaskScreenViewController {
 		}
 	}
 }
+
+// MARK: - TaskScreenViewInput
 
 extension TaskScreenViewController: TaskScreenViewInput {
 	func setData(model: MainScreenItemModel) {

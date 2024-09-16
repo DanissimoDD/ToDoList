@@ -14,7 +14,7 @@ protocol MainScreenPresenterOutput {
 	
 	func updateTask(model: MainScreenItemModel)
 	
-	func fetchData(complition: @escaping () -> ())
+	func fetchData(complition: @escaping (Result<[MainScreenItemModel], Error>) -> ())
 }
 
 final class MainScreenInteractor {
@@ -24,8 +24,6 @@ final class MainScreenInteractor {
 	private let networkManager: NetworkManagerProtocol
 	
 	private let mapper: ResponseModelMapperProtocol
-	
-	weak var presenter: MainScreenPresenterInput?
 	
 	init(
 		dataManager: DataStore,
@@ -57,7 +55,7 @@ extension MainScreenInteractor: MainScreenPresenterOutput {
 		}
 	}
 	
-	func fetchData(complition: @escaping () -> ()) {
+	func fetchData(complition: @escaping (Result<[MainScreenItemModel],Error>) -> ()) {
 		networkManager.sendRequest { [weak self]
 			result in
 			guard let self else { return }
@@ -65,16 +63,15 @@ extension MainScreenInteractor: MainScreenPresenterOutput {
 			switch result {
 			case .success(let responseModel):
 				let data = self.mapper.map(responseModel: responseModel)
-				presenter?.dataDidLoad(models: data)
+				complition(.success(data))
 				DispatchQueue.global(qos: .background).async { [weak self] in
 					guard let self else { return }
 					for model in data {
 						dataManager.createTaskItem(model)
 					}
 				}
-				complition()
 			case .failure(let error):
-				presenter?.showRequestError(message: error.localizedDescription)
+				complition(.failure(error))
 			}
 		}
 	}

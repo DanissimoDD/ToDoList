@@ -15,8 +15,9 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 		print(FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first ?? "")
 		guard let windowScene = (scene as? UIWindowScene) else { return }
 		let window = UIWindow(windowScene: windowScene)
+		let screenAssembler = ScreenAssembler()
 		let navController = UINavigationController()
-		let router = Router(navigationController: navController)
+		let router = Router(navigationController: navController, screenAssembler: screenAssembler)
 		window.rootViewController = router.navigationController
 		window.makeKeyAndVisible()
 		self.window = window

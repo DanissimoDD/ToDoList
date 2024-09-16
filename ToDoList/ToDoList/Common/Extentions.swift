@@ -42,3 +42,38 @@ extension UIView {
 		}
 	}
 }
+
+extension UIColor {
+	convenience init(fromHex hex: String) {
+		var rgbValue: UInt64 = 0
+		let scanner = Scanner(string: hex)
+		scanner.scanHexInt64(&rgbValue)
+		
+		self.init(
+			red: CGFloat((rgbValue & 0xFF0000) >> 16) / 255.0,
+			green: CGFloat((rgbValue & 0xFF00) >> 8) / 255.0,
+			blue: CGFloat(rgbValue & 0xFF) / 255.0,
+			alpha: CGFloat(1.0)
+		)
+	}
+}
+
+extension Date {
+	func formattedDayAndTime() -> [String] {
+		var dayString = ""
+		
+		if Calendar.current.isDateInToday(self) {
+			dayString = "Today"
+		} else {
+			let dateFormatterDay = DateFormatter()
+			dateFormatterDay.dateFormat = "d MMMM"
+			dayString = dateFormatterDay.string(from: self)
+		}
+		
+		let dateFormatterTime = DateFormatter()
+		dateFormatterTime.dateFormat = "hh:mm a"
+		let timeString = dateFormatterTime.string(from: self)
+		
+		return [dayString, timeString]
+	}
+}

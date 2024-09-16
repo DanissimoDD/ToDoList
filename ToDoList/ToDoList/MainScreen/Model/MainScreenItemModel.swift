@@ -13,9 +13,14 @@ struct MainScreenItemModel: Hashable {
 	var subTitle: String
 	var dateTime: Date
 	var hasDone: Bool
-}
+	
+	init(title: String, subTitle: String, dateTime: Date, hasDone: Bool) {
+		self.title = title
+		self.subTitle = subTitle
+		self.dateTime = dateTime
+		self.hasDone = hasDone
+	}
 
-extension MainScreenItemModel {
 	init(mo: TaskItem) {
 		uid = mo.uid
 		title = mo.title
@@ -23,9 +28,7 @@ extension MainScreenItemModel {
 		dateTime = mo.date
 		hasDone = mo.hasDone
 	}
-}
-
-extension MainScreenItemModel {
+	
 	init(model: TaskScreenModel) {
 		uid = model.uid
 		title = model.title
@@ -33,11 +36,8 @@ extension MainScreenItemModel {
 		dateTime = model.dateTime
 		hasDone = false
 	}
-}
-
-extension MainScreenItemModel {
+	
 	init(itemModelJSON: ItemModelJSON) {
-//		uid = UUID(from: itemModelJSON.userId) хм...
 		title = itemModelJSON.todo
 		subTitle = ""
 		dateTime = Date()

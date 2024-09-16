@@ -19,19 +19,19 @@ protocol DataStore {
 
 final class DataManager {
 	
-	lazy var container = {
+	private lazy var container = {
 		let container = NSPersistentContainer(name: "ToDoList")
 		container.loadPersistentStores { _, error in
 			if let error {
-				print(error.localizedDescription)
+				fatalError(error.localizedDescription)
 			}
 		}
 		return container
 	} ()
 	
-	lazy var context = container.viewContext
+	private lazy var context = container.viewContext
 	
-	lazy var backgroundContext = {
+	private lazy var backgroundContext = {
 		let backgroundContext = container.newBackgroundContext()
 		backgroundContext.mergePolicy = NSMergeByPropertyObjectTrumpMergePolicy
 		return backgroundContext
@@ -42,7 +42,7 @@ final class DataManager {
 			do {
 				try context.save()
 			} catch {
-				print(error.localizedDescription)
+				fatalError(error.localizedDescription)
 			}
 		}
 	}
@@ -51,7 +51,7 @@ final class DataManager {
 		do {
 			try backgroundContext.save()
 		} catch {
-			print(error.localizedDescription)
+			fatalError(error.localizedDescription)
 		}
 	}
 	
@@ -83,32 +83,23 @@ extension DataManager: DataStore {
 	
 	func fetchAllTasks() -> [MainScreenItemModel] {
 		var mos: [TaskItem] = []
-		context.performAndWait {
-			mos = fetchAllTasks()
-		}
+		mos = fetchAllTasks()
 		return mos.map { MainScreenItemModel(mo: $0) }
 	}
-	
-//	func fetchTaskItemWith(id: UUID) -> MainScreenItemModel? {
-//		guard let mo: TaskItem = fetchMOWith(id: id) else { return nil }
-//		return MainScreenItemModel(mo: mo)
-//	}
 
-	// Надо обновлять сразу по одному в бэкграунде, так похоже не успевает
 	func updateTaskItem(model: MainScreenItemModel) {
 		
 		let objectId = fetchMOWith(id: model.uid)?.objectID
 		backgroundContext.perform { [weak self] in
-			guard let self, let objectId = objectId else { return }
-			
-			let mo = backgroundContext.object(with: objectId) as! TaskItem
+			guard let self,
+				  let objectId,
+				  let mo = backgroundContext.object(with: objectId) as? TaskItem else { return }
 			
 			mo.title = model.title
 			mo.subtitle = model.subTitle
 			mo.date = model.dateTime
 			mo.hasDone = model.hasDone
 			
-//		saveContext()
 			saveBackgroundContext()
 		}
 	}
@@ -118,7 +109,8 @@ extension DataManager: DataStore {
 		let objectId = fetchMOWith(id: modelId)?.objectID
   
 		backgroundContext.performAndWait { [weak self] in
-			guard let self, let objectId = objectId else { return }
+			guard let self,
+				  let objectId = objectId else { return }
 			
 			let mo = backgroundContext.object(with: objectId)
 			backgroundContext.delete(mo)

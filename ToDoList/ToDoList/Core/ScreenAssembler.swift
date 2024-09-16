@@ -9,18 +9,19 @@ import UIKit
 
 protocol ScreenAssemblerProtocol {
 	func makeMainScreen(router: MainScreenRouter) -> MainScreenViewController
+	
+	func makeTaskScreen(router: TaskScreenRouter, model: MainScreenItemModel?) -> TaskScreenViewController
 }
 
 struct ScreenAssembler: ScreenAssemblerProtocol {
 	
-	let dataManager = DataManager()
+	private let dataManager = DataManager()
 	
-	let userDefaults = Storage()
+	private let userDefaults = Storage()
 	
 	func makeMainScreen(router: MainScreenRouter) -> MainScreenViewController {
 		let interactor = MainScreenInteractor(dataManager: dataManager)
 		let presenter = MainScreenPresenter(output: interactor, router: router, defaults: userDefaults)
-		interactor.presenter = presenter
 		let vc = MainScreenViewController(presenter: presenter)
 		presenter.view = vc
 		return vc

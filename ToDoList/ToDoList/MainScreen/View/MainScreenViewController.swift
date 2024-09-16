@@ -25,6 +25,19 @@ final class MainScreenViewController: UIViewController {
 		return label
 	} ()
 	
+	private let emptyLabel: UILabel = {
+		let label = UILabel()
+		label.text = "You have no tasks yet.\n Add tasks to get started"
+		label.textColor = .black
+		label.textAlignment = .center
+		label.numberOfLines = 0
+		label.layer.cornerRadius = 30
+		label.clipsToBounds = true
+		label.backgroundColor = UIColor(fromHex: "E0E0E0")
+		label.font = .systemFont(ofSize: 20, weight: .semibold)
+		return label
+	} ()
+	
 	private let dateLabel = {
 		let label = UILabel()
 		let dateFormatter = DateFormatter()
@@ -61,7 +74,7 @@ final class MainScreenViewController: UIViewController {
 		return collectionView
 	} ()
 	
-	var dataSource: UICollectionViewDiffableDataSource<MainScreenSectionModel, MainScreenItemModel>?
+	private var dataSource: UICollectionViewDiffableDataSource<MainScreenSectionModel, MainScreenItemModel>?
 
 	init(presenter: MainScreenViewOutput) {
 		self.output = presenter
@@ -86,18 +99,18 @@ final class MainScreenViewController: UIViewController {
 		super.viewDidAppear(animated)
 		output.viewDidLoad()
 	}
-}
-
-private extension MainScreenViewController {
-	func setupView() {
-		view.backgroundColor = UIColor(red: 245/256, green: 245/256, blue: 245/256, alpha: 1)
-		view.addSubviews(titleLabel, dateLabel, addTaskButton, collectionView)
+	
+	// MARK: - Private setup methods
+	
+	private func setupView() {
+		view.backgroundColor = UIColor(fromHex: "F0F0F0")
+		view.addSubviews(titleLabel, dateLabel, addTaskButton, collectionView, emptyLabel)
 	}
 	
-	func setupLayout() {
-		view.disableAutoresizingMaskTranslation(titleLabel, dateLabel, addTaskButton, collectionView)
+	private func setupLayout() {
+		view.disableAutoresizingMaskTranslation(titleLabel, dateLabel, addTaskButton, collectionView, emptyLabel)
 		NSLayoutConstraint.activate([
-			titleLabel.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor/*, constant: 16*/),
+			titleLabel.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
 			titleLabel.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
 			titleLabel.trailingAnchor.constraint(equalTo: addTaskButton.leadingAnchor,  constant: -8),
 			titleLabel.heightAnchor.constraint(equalToConstant: 24),
@@ -115,11 +128,16 @@ private extension MainScreenViewController {
 			collectionView.topAnchor.constraint(equalTo: dateLabel.bottomAnchor, constant: 32),
 			collectionView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
 			collectionView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
-			collectionView.bottomAnchor.constraint(equalTo:  view.safeAreaLayoutGuide.bottomAnchor)
+			collectionView.bottomAnchor.constraint(equalTo:  view.safeAreaLayoutGuide.bottomAnchor),
+			
+			emptyLabel.topAnchor.constraint(equalTo: dateLabel.bottomAnchor, constant: 32),
+			emptyLabel.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+			emptyLabel.widthAnchor.constraint(equalToConstant: 300),
+			emptyLabel.heightAnchor.constraint(equalToConstant: 200)
 		])
 	}
 	
-	func setupButtonAction() {
+	private func setupButtonAction() {
 		addTaskButton.addAction(UIAction { [weak self]
 			_ in
 			guard let self else { return }
@@ -127,7 +145,7 @@ private extension MainScreenViewController {
 		}, for: .touchUpInside)
 	}
 	
-	func setupDataSource() {
+	private func setupDataSource() {
 		let action = actionForCell()
 		dataSource = UICollectionViewDiffableDataSource(
 			collectionView: collectionView,
@@ -140,7 +158,7 @@ private extension MainScreenViewController {
 		)
 	}
 	
-	func actionForCell() -> UIAction {
+	private func actionForCell() -> UIAction {
 		UIAction { [weak self]
 			localActon in
 			guard let self else { return }
@@ -151,14 +169,24 @@ private extension MainScreenViewController {
 		}
 	}
 	
-	func indexPath(of element:Any) -> IndexPath? {
+	private func indexPath(of element:Any) -> IndexPath? {
 		if let view =  element as? UIView {
 			let pos = view.convert(CGPoint.zero, to: collectionView)
 			return collectionView.indexPathForItem(at: pos)
 		}
 		return nil
 	}
+	
+	private func viewDisappearance(_ view: UIView, duration: TimeInterval) {
+		UIView.animate(withDuration: 0.5, delay: duration, options: [], animations: {
+			view.alpha = 0.0
+		}) { _ in
+			view.removeFromSuperview()
+		}
+	}
 }
+
+// MARK: - MainScreenViewInput
 
 extension MainScreenViewController: MainScreenViewInput {
 	func updateDataSource(models: [MainScreenItemModel]) {
@@ -166,46 +194,36 @@ extension MainScreenViewController: MainScreenViewInput {
 		snapshot.appendSections([.main])
 		snapshot.appendItems(models)
 		dataSource?.apply(snapshot)
+		emptyLabel.isHidden = !models.isEmpty
 	}
-	
 
 	func showToast(message: String, duration: TimeInterval) {
-		
 		let toastView = ToastView(message: message)
 
-		// Получаем текущее окно
-		if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene {
-			if let window = windowScene.windows.first(where: { $0.isKeyWindow }) {
-				// Добавляем toastView в окно
-				window.addSubview(toastView)
-				toastView.translatesAutoresizingMaskIntoConstraints = false
+		guard let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+			  let window = windowScene.windows.first(where: { $0.isKeyWindow }) else { return }
+		
+		window.addSubview(toastView)
+		toastView.translatesAutoresizingMaskIntoConstraints = false
 
-				// Устанавливаем ограничения для toastView
-				NSLayoutConstraint.activate([
-					toastView.centerXAnchor.constraint(equalTo: window.centerXAnchor),
-					toastView.bottomAnchor.constraint(equalTo: window.bottomAnchor, constant: -100),
-					toastView.widthAnchor.constraint(lessThanOrEqualToConstant: 320),
-					toastView.heightAnchor.constraint(greaterThanOrEqualToConstant: 50) // Минимальная высота
-				])
+		NSLayoutConstraint.activate([
+			toastView.centerXAnchor.constraint(equalTo: window.centerXAnchor),
+			toastView.bottomAnchor.constraint(equalTo: window.bottomAnchor, constant: -100),
+			toastView.widthAnchor.constraint(lessThanOrEqualToConstant: 320),
+			toastView.heightAnchor.constraint(greaterThanOrEqualToConstant: 50) // Минимальная высота
+		])
 
-				// Анимация появления
-				toastView.alpha = 0.0
-				UIView.animate(withDuration: 0.5) {
-					toastView.alpha = 1.0
-				} completion: { _ in
-					// Анимация исчезновения через заданный интервал
-					UIView.animate(withDuration: 0.5, delay: duration, options: [], animations: {
-						toastView.alpha = 0.0
-					}) { _ in
-						// Удаляем toast после завершения анимации
-						toastView.removeFromSuperview()
-					}
-				}
-			}
+		toastView.alpha = 0.0
+		UIView.animate(withDuration: 0.5) {
+			toastView.alpha = 1.0
+		} completion: { [weak self]
+			_ in
+			self?.viewDisappearance(toastView, duration: duration)
 		}
 	}
 }
 
+// MARK: - UICollectionViewDelegate
 
 extension MainScreenViewController: UICollectionViewDelegate {
 	func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {

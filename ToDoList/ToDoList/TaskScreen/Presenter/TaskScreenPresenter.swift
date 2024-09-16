@@ -35,8 +35,7 @@ final class TaskScreenPresenter {
 
 extension TaskScreenPresenter: TaskScreenViewOutput {
 	func isEditMode() -> Bool {
-		guard self.model != nil else { return  false }
-		return true
+		self.model != nil
 	}
 	
 	func taskDeletion() {

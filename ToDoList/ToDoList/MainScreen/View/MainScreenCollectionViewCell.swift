@@ -31,7 +31,7 @@ final class MainScreenCollectionViewCell: UICollectionViewCell {
 	
 	private let devider = {
 		let view = UIView()
-		view.backgroundColor = UIColor(red: 240/256, green: 240/256, blue: 240/256, alpha: 1)
+		view.backgroundColor = UIColor(fromHex: "F0F0F0")
 		return view
 	} ()
 	
@@ -49,16 +49,16 @@ final class MainScreenCollectionViewCell: UICollectionViewCell {
 	required init?(coder: NSCoder) {
 		fatalError("init(coder:) has not been implemented")
 	}
-}
-
-private extension MainScreenCollectionViewCell {
-	func setupView() {
+	
+	// MARK: - Private setup methods
+	
+	private func setupView() {
 		backgroundColor = .white
 		layer.cornerRadius = 20
 		addSubviews(textLabel, subTextLabel, dateLabel, devider, checkButton, markImage)
 	}
 	
-	func setupLayout() {
+	private func setupLayout() {
 		disableAutoresizingMaskTranslation(textLabel, subTextLabel, dateLabel, devider, checkButton, markImage)
 		
 		NSLayoutConstraint.activate([
@@ -110,16 +110,7 @@ extension MainScreenCollectionViewCell {
 		UIImage(systemName: "circle")
 		checkButton.tag = cellRow
 		checkButton.addAction(action, for: .touchUpInside)
-		var dayString = ""
-		if Calendar.current.isDateInToday(model.dateTime) {
-			dayString = "Today"
-		} else {
-			let dateFormatterDay = DateFormatter()
-			dateFormatterDay.dateFormat = "d MMMM"
-			dayString = dateFormatterDay.string(from: model.dateTime)
-		}
-		let dateFormatterTime = DateFormatter()
-		dateFormatterTime.dateFormat = "hh:mm a"
-		dateLabel.text = "\(dayString), \(dateFormatterTime.string(from: model.dateTime))"
+		let timeStrings = model.dateTime.formattedDayAndTime()
+		dateLabel.text = "\(timeStrings[0]), \(timeStrings[1])"
 	}
 }

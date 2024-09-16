@@ -13,7 +13,6 @@ protocol TaskScreenRouter {
 
 extension Router: TaskScreenRouter {
 	func returnToMainScreen() {
-//		navigationController.dismiss(animated: true)
 		navigationController.popViewController(animated: true)
 	}
 }

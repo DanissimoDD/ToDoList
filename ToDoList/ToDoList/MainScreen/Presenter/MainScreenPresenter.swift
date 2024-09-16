@@ -19,12 +19,6 @@ protocol MainScreenViewOutput {
 	func showTask(index: Int)
 }
 
-protocol MainScreenPresenterInput: AnyObject {
-	func dataDidLoad(models: [MainScreenItemModel])
-	
-	func showRequestError(message: String)
-}
-
 final class MainScreenPresenter {
 	weak var view: MainScreenViewInput?
 	
@@ -53,7 +47,7 @@ extension MainScreenPresenter: MainScreenViewOutput {
 	}
 	
 	@objc func anyCheckMarkTapped(item: Int) {
-		itemModel[item].hasDone.toggle() // проблема с тегами при удалении
+		itemModel[item].hasDone.toggle()
 		output.updateTask(model: itemModel[item])
 		view?.updateDataSource(models: itemModel)
 	}
@@ -65,10 +59,15 @@ extension MainScreenPresenter: MainScreenViewOutput {
 	func viewDidLoad() {
 		if !defaults.isAppLounchedBefore {
 			defaults.isAppLounchedBefore = true
-			dispatchGroup.enter()
-			output.fetchData { [weak self] in
+			output.fetchData { [weak self] result in
 				guard let self else { return }
-				view?.updateDataSource(models: itemModel)
+				switch result {
+				case .success(let models):
+					itemModel = models
+					view?.updateDataSource(models: itemModel)
+				case .failure(let error):
+					view?.showToast(message: error.localizedDescription, duration: 2)
+				}
 			}
 		} else {
 			itemModel = output.fetchTasks()
@@ -78,15 +77,5 @@ extension MainScreenPresenter: MainScreenViewOutput {
 	
 	func saveChanges(index: Int) {
 		output.updateTask(model: itemModel[index])
-	}
-}
-
-extension MainScreenPresenter: MainScreenPresenterInput {
-	func dataDidLoad(models: [MainScreenItemModel]) {
-		itemModel = models
-	}
-	
-	func showRequestError(message: String) {
-		view?.showToast(message: message, duration: 2)
 	}
 }

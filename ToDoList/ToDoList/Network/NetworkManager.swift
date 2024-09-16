@@ -14,14 +14,14 @@ protocol NetworkManagerProtocol {
 
 final class NetworkManager: NetworkManagerProtocol {
 	
-	private let endPoint: String = "https://dufmmyjson.com/todos"
+	private let endPoint: String = "https://dummyjson.com/todos"
 	
 	func sendRequest(completion: @escaping (Result<ResponseModel, Error>) -> Void) {
 		AF.request(endPoint).validate(statusCode: 200..<300).responseDecodable(of: ResponseModel.self) { response in
 			switch response.result {
 			case .success(let responseModel):
 				completion(.success(responseModel))
-			case let .failure(error):
+			case .failure(let error):
 				completion(.failure(error))
 			}
 		}
