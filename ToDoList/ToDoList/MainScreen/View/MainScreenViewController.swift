@@ -49,12 +49,11 @@ final class MainScreenViewController: UIViewController {
 	} ()
 	
 	private let addTaskButton = {
-		let button = UIButton()
-		button.backgroundColor = .blue.withAlphaComponent(0.15)
+		let button = UIButton(type: .system)
+		button.backgroundColor = UIColor(fromHex: "E0EBFE")
 		button.setTitle("+ New Task", for: .normal)
 		button.titleLabel?.font = .systemFont(ofSize: 16, weight: .medium)
-		button.setTitleColor(.blue, for: .normal)
-		button.setTitleColor(.blue.withAlphaComponent(0.5), for: .highlighted)
+		button.setTitleColor(UIColor(fromHex: "447EE4"), for: .normal)
 		button.clipsToBounds = true
 		button.layer.cornerRadius = 16
 		return button
